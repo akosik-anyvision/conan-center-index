@@ -72,22 +72,25 @@ class GTestConan(ConanFile):
         del self.info.options.no_main
 
     def package_info(self):
+        self.cpp_info.name = "GTest"
+        self.cpp_info.names["cmake_find_package"] = "GTest"
+        self.cpp_info.names["cmake_find_package_multi"] = "GTest"
         if self.options.build_gmock:
-            gmock_libs = ['gmock', 'gtest'] if self.options.no_main else ['gmock_main', 'gmock', 'gtest']
-            self.cpp_info.libs = ["{}{}".format(lib, self._postfix) for lib in gmock_libs]
-        else:
-            gtest_libs = ['gtest'] if self.options.no_main else ['gtest_main' , 'gtest']
-            self.cpp_info.libs = ["{}{}".format(lib, self._postfix) for lib in gtest_libs]
+            self.cpp_info.components['gmock'].libs = ["{}{}".format('gmock', self._postfix)]
+        if not self.options.no_main:
+            self.cpp_info.components['gtest_main'].libs = ["{}{}".format('gtest_main', self._postfix)]
+        self.cpp_info.components['gtest'].libs = ["{}{}".format('gtest', self._postfix)]
 
         if self.settings.os == "Linux":
-            self.cpp_info.system_libs.append("pthread")
+            for component in self.cpp_info.components.values():
+                component.system_libs.append("pthread")
 
         if self.options.shared:
-            self.cpp_info.defines.append("GTEST_LINKED_AS_SHARED_LIBRARY=1")
+            for component in self.cpp_info.components.values():
+                component.defines.append("GTEST_LINKED_AS_SHARED_LIBRARY=1")
 
         if self.settings.compiler == "Visual Studio":
             if Version(self.settings.compiler.version.value) >= "15":
-                self.cpp_info.defines.append("GTEST_LANG_CXX11=1")
-                self.cpp_info.defines.append("GTEST_HAS_TR1_TUPLE=0")
-        self.cpp_info.names["cmake_find_package"] = "GTest"
-        self.cpp_info.names["cmake_find_package_multi"] = "GTest"
+                for component in self.cpp_info.components.values():
+                    component.defines.append("GTEST_LANG_CXX11=1")
+                    component.defines.append("GTEST_HAS_TR1_TUPLE=0")
